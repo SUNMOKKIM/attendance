@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>출석 현황</title>
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7; --surface: #fcfcfb; --ink: #0b0b0b; --ink-2: #52514e; --muted: #898781; --grid: #e1e0d9;
+  --border: rgba(11, 11, 11, 0.10); --border-strong: rgba(11, 11, 11, 0.20);
+  --accent-button: #2a78d6; --accent-ink: #1c5cab; --accent-soft: #e6effa;
+  --good-ink: #006300; --warning-ink: #6b4800; --warning-soft: #fdf0d2; --critical-ink: #b42f2f; --critical-soft: #fbe9e9;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7; --grid: #2c2c2a;
+    --border: rgba(255, 255, 255, 0.10); --border-strong: rgba(255, 255, 255, 0.20);
+    --accent-button: #256abf; --accent-ink: #9ec5f4; --accent-soft: #15263b;
+    --good-ink: #5fd35f; --warning-ink: #f5c86a; --warning-soft: #2e2410; --critical-ink: #ef8a8a; --critical-soft: #331616;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7; --grid: #2c2c2a;
+  --border: rgba(255, 255, 255, 0.10); --border-strong: rgba(255, 255, 255, 0.20);
+  --accent-button: #256abf; --accent-ink: #9ec5f4; --accent-soft: #15263b;
+  --good-ink: #5fd35f; --warning-ink: #f5c86a; --warning-soft: #2e2410; --critical-ink: #ef8a8a; --critical-soft: #331616;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page); color: var(--ink);
+  font: 15px/1.6 system-ui, -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", "Segoe UI", sans-serif; }
+main { max-width: 760px; margin: 0 auto; padding: 24px 16px 64px; }
+[hidden] { display: none !important; }
+h1 { font-size: 22px; margin: 0; }
+h2 { font-size: 17px; margin: 28px 0 10px; }
+h3 { font-size: 14px; margin: 16px 0 6px; color: var(--ink-2); }
+p { margin: 4px 0; }
+.sub, .muted { color: var(--ink-2); }
+.narrow { max-width: 380px; margin: 56px auto 0; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+.card.flush { padding: 0; }
+.head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; }
+label { display: block; font-size: 13px; color: var(--ink-2); margin: 12px 0 4px; }
+label:first-child { margin-top: 0; }
+input, select { width: 100%; padding: 9px 10px; border-radius: 8px; border: 1px solid var(--border-strong);
+  background: var(--page); color: var(--ink); font: inherit; font-size: 16px; }
+.btn { padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border-strong); background: var(--surface);
+  color: var(--ink); font: inherit; font-size: 14px; cursor: pointer; }
+.btn.primary { background: var(--accent-button); border-color: var(--accent-button); color: #fff; margin-top: 16px; width: 100%; }
+.btn:disabled { opacity: 0.6; }
+.error { color: var(--critical-ink); background: var(--critical-soft); padding: 8px 10px; border-radius: 8px; margin-top: 12px; }
+.big { font-size: 28px; font-weight: 600; margin: 12px 0 0; }
+.list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.list li { padding: 4px 10px; border-radius: 999px; background: var(--page); border: 1px solid var(--border); font-size: 14px; }
+.list li small { color: var(--ink-2); margin-left: 4px; }
+ul.card.list { display: block; padding: 4px 16px; }
+ul.card.list li { display: flex; justify-content: space-between; border: none; border-bottom: 1px solid var(--grid);
+  border-radius: 0; background: none; padding: 8px 0; }
+ul.card.list li:last-child { border-bottom: none; }
+.badge { display: inline-block; padding: 0 8px; border-radius: 999px; font-size: 12px; background: var(--warning-soft); color: var(--warning-ink); }
+.scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { padding: 8px 10px; border-bottom: 1px solid var(--grid); text-align: left; white-space: nowrap; }
+th { color: var(--ink-2); font-size: 12px; font-weight: 600; }
+td.c, th.c { text-align: center; padding: 8px 4px; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.F { color: var(--good-ink); } .M { color: var(--accent-ink); font-weight: 700; } .N { color: var(--muted); } .na { color: var(--grid); }
+.legend { font-size: 13px; color: var(--ink-2); margin-top: 8px; }
+#q { margin-bottom: 10px; }
+</style>
+</head>
+<body>
+<main>
+  <section id="lock" class="narrow">
+    <h1>출석 현황</h1>
+    <p class="sub">교회에서 받은 아이디와 비밀번호로 열어요.</p>
+    <form id="login" class="card" style="margin-top: 16px">
+      <label for="u">아이디</label>
+      <input id="u" autocomplete="username" autocapitalize="off" required>
+      <label for="p">비밀번호</label>
+      <input id="p" type="password" autocomplete="current-password" required>
+      <button class="btn primary" id="go">열기</button>
+      <p class="error" id="err" role="alert" hidden></p>
+    </form>
+  </section>
+
+  <section id="app" hidden>
+    <div class="head">
+      <div><h1>출석 현황</h1><p class="sub" id="updated"></p></div>
+      <button class="btn" id="logout">잠그기</button>
+    </div>
+
+    <h2>예배</h2>
+    <div class="card">
+      <select id="svc" aria-label="예배 고르기"></select>
+      <p class="big" id="svc-count"></p>
+      <h3>출석</h3><ul class="list" id="present"></ul>
+      <h3>결석</h3><ul class="list muted" id="absent"></ul>
+    </div>
+
+    <div id="streak-box">
+      <h2>3회 이상 연속 결석</h2>
+      <ul class="card list" id="streaks"></ul>
+    </div>
+
+    <h2>성도별</h2>
+    <input id="q" type="search" placeholder="이름이나 소속으로 찾기" aria-label="성도 찾기">
+    <div class="card flush scroll"><table id="table"></table></div>
+    <p class="legend"><span class="F">●</span> 얼굴로 확인 · <span class="M">✓</span> 직접 체크 · <span class="N">○</span> 결석 · <span class="na">·</span> 등록 전</p>
+  </section>
+</main>
+<script>
+(() => {
+  const TAG_PREFIX = "공릉로출석:";  // publish.py와 같아야 함
+  const MARK = { F: "●", M: "✓", N: "○", ".": "·" };
+  const DAYS = "일월화수목금토";
+  const STREAK_ALERT = 3;
+  const COLUMNS = 8;
+  const $ = (id) => document.getElementById(id);
+  const enc = new TextEncoder();
+  const b64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+  let file = null;
+  let view = null;
+
+  const el = (tag, text, cls) => {
+    const n = document.createElement(tag);
+    if (text !== undefined) n.textContent = text;
+    if (cls) n.className = cls;
+    return n;
+  };
+  const kdate = (d) => {
+    const t = new Date(d + "T00:00:00");
+    return `${t.getMonth() + 1}월 ${t.getDate()}일 (${DAYS[t.getDay()]})`;
+  };
+
+  async function tag(username) {
+    const digest = await crypto.subtle.digest("SHA-256", enc.encode(TAG_PREFIX + username));
+    return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("").slice(0, 16);
+  }
+
+  // 아이디·비밀번호로 데이터 열쇠를 푼다. 틀리면 예외가 난다.
+  async function unwrap(username, password) {
+    const t = await tag(username);
+    const user = file.users.find((u) => u.t === t);
+    if (!user) throw new Error("no user");
+    const base = await crypto.subtle.importKey("raw", enc.encode(password), "PBKDF2", false, ["deriveKey"]);
+    const kek = await crypto.subtle.deriveKey(
+      { name: "PBKDF2", salt: b64(user.s), iterations: file.i, hash: "SHA-256" },
+      base, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
+    const w = b64(user.w);
+    return new Uint8Array(await crypto.subtle.decrypt({ name: "AES-GCM", iv: w.slice(0, 12) }, kek, w.slice(12)));
+  }
+
+  async function open(raw) {
+    const key = await crypto.subtle.importKey("raw", raw, "AES-GCM", false, ["decrypt"]);
+    const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64(file.n) }, key, b64(file.c));
+    view = JSON.parse(new TextDecoder().decode(plain));
+    try { sessionStorage.setItem("k", btoa(String.fromCharCode(...raw))); } catch (_) { /* 저장 안 돼도 이번엔 볼 수 있음 */ }
+    render();
+  }
+
+  function render() {
+    $("lock").hidden = true;
+    $("app").hidden = false;
+    $("updated").textContent = `${view.updated} 기준`;
+    const sel = $("svc");
+    sel.replaceChildren(...[...view.services].reverse().map((s) => new Option(`${kdate(s.date)} ${s.name}`, s.id)));
+    sel.onchange = showService;
+    showService();
+
+    const streaks = view.members.filter((m) => m.streak >= STREAK_ALERT).sort((a, b) => b.streak - a.streak);
+    $("streak-box").hidden = !streaks.length;
+    $("streaks").replaceChildren(...streaks.map((m) => {
+      const li = el("li");
+      const name = el("span", m.name);
+      if (m.group) name.append(el("small", ` ${m.group}`, "muted"));
+      li.append(name, el("span", `${m.streak}회`, "badge"));
+      return li;
+    }));
+    renderTable();
+    $("q").oninput = renderTable;
+  }
+
+  function showService() {
+    if (!view.services.length) {
+      $("svc-count").textContent = "아직 예배 기록이 없어요.";
+      return;
+    }
+    const index = view.services.findIndex((s) => String(s.id) === $("svc").value);
+    const sid = view.services[index].id;
+    const present = [], absent = [];
+    for (const m of view.members) {
+      const c = m.cells[index];
+      if (c === "F" || c === "M") present.push(m);
+      else if (c === "N") absent.push(m);
+    }
+    $("svc-count").textContent = `출석 ${present.length}명 / ${present.length + absent.length}명`;
+    $("present").replaceChildren(...present.map((m) => {
+      const li = el("li", m.name);
+      const when = view.arrived[`${sid}:${m.id}`];
+      li.append(el("small", m.cells[index] === "M" ? "직접 체크" : (when || "")));
+      return li;
+    }));
+    $("absent").replaceChildren(...absent.map((m) => el("li", m.name)));
+  }
+
+  function renderTable() {
+    const q = $("q").value.trim();
+    const cols = view.services.slice(-COLUMNS);
+    const offset = view.services.length - cols.length;
+    const head = el("tr");
+    head.append(el("th", "이름"), ...cols.map((s) => el("th", s.date.slice(5).replace("-", "/").replace(/^0/, ""), "c")),
+                el("th", "출석률", "num"), el("th", "연속 결석", "num"));
+    const rows = view.members.filter((m) => !q || m.name.includes(q) || (m.group || "").includes(q)).map((m) => {
+      const tr = el("tr");
+      const name = el("td", m.name);
+      if (m.group) name.append(el("small", ` ${m.group}`, "muted"));
+      tr.append(name);
+      for (let i = 0; i < cols.length; i++) {
+        const c = m.cells[offset + i];
+        tr.append(el("td", MARK[c], `c ${c === "." ? "na" : c}`));
+      }
+      tr.append(el("td", m.rate === null ? "–" : `${Math.round(m.rate * 100)}%`, "num"),
+                el("td", String(m.streak), "num"));
+      return tr;
+    });
+    $("table").replaceChildren(el("thead"), el("tbody"));
+    $("table").tHead.append(head);
+    $("table").tBodies[0].append(...rows);
+  }
+
+  $("login").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    $("go").disabled = true;
+    $("err").hidden = true;
+    try {
+      await open(await unwrap($("u").value.trim(), $("p").value));
+    } catch (_) {
+      $("err").textContent = "아이디나 비밀번호가 맞지 않아요.";
+      $("err").hidden = false;
+    } finally {
+      $("go").disabled = false;
+    }
+  });
+
+  $("logout").addEventListener("click", () => {
+    try { sessionStorage.removeItem("k"); } catch (_) { /* 무시 */ }
+    view = null;
+    $("app").hidden = true;
+    $("lock").hidden = false;
+    $("p").value = "";
+  });
+
+  (async () => {
+    try {
+      file = await (await fetch("data.json", { cache: "no-store" })).json();
+    } catch (_) {
+      $("err").textContent = "아직 올라온 출석 정보가 없어요.";
+      $("err").hidden = false;
+      return;
+    }
+    let saved = null;
+    try { saved = sessionStorage.getItem("k"); } catch (_) { /* 무시 */ }
+    if (saved) {
+      try { await open(b64(saved)); } catch (_) { /* 열쇠가 바뀌었으면 다시 로그인 */ }
+    }
+  })();
+})();
+</script>
+</body>
+</html>
