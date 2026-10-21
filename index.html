@@ -232,10 +232,22 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
     $("table").tBodies[0].append(...rows);
   }
 
+  // 출석 파일을 다 받기 전에 로그인을 누를 수 있으므로, 로그인은 이 약속이 끝난 뒤에 한다
+  const ready = fetch("data.json", { cache: "no-store" })
+    .then((r) => r.json())
+    .then((d) => (file = d))
+    .catch(() => null);
+
   $("login").addEventListener("submit", async (e) => {
     e.preventDefault();
     $("go").disabled = true;
     $("err").hidden = true;
+    if (!(await ready)) {
+      $("err").textContent = "출석 정보를 불러오지 못했어요. 잠시 뒤 다시 해 주세요.";
+      $("err").hidden = false;
+      $("go").disabled = false;
+      return;
+    }
     try {
       await open(await unwrap($("u").value.trim(), $("p").value));
     } catch (_) {
@@ -255,9 +267,7 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
   });
 
   (async () => {
-    try {
-      file = await (await fetch("data.json", { cache: "no-store" })).json();
-    } catch (_) {
+    if (!(await ready)) {
       $("err").textContent = "아직 올라온 출석 정보가 없어요.";
       $("err").hidden = false;
       return;
