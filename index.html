@@ -67,7 +67,7 @@ th, td { padding: 8px 10px; border-bottom: 1px solid var(--grid); text-align: le
 th { color: var(--ink-2); font-size: 12px; font-weight: 600; }
 td.c, th.c { text-align: center; padding: 8px 4px; }
 td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
-.F { color: var(--good-ink); } .M { color: var(--accent-ink); font-weight: 700; } .N { color: var(--muted); } .na { color: var(--grid); }
+.F { color: var(--good-ink); } .M { color: var(--accent-ink); font-weight: 700; } .P { color: var(--warning-ink); font-weight: 700; } .N { color: var(--muted); } .na { color: var(--grid); }
 .legend { font-size: 13px; color: var(--ink-2); margin-top: 8px; }
 #q { margin-bottom: 10px; }
 </style>
@@ -98,6 +98,7 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
       <select id="svc" aria-label="예배 고르기"></select>
       <p class="big" id="svc-count"></p>
       <h3>출석</h3><ul class="list" id="present"></ul>
+      <h3>확인 중</h3><ul class="list" id="pending"></ul>
       <h3>결석</h3><ul class="list muted" id="absent"></ul>
     </div>
 
@@ -109,13 +110,13 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
     <h2>성도별</h2>
     <input id="q" type="search" placeholder="이름이나 소속으로 찾기" aria-label="성도 찾기">
     <div class="card flush scroll"><table id="table"></table></div>
-    <p class="legend"><span class="F">●</span> 얼굴로 확인 · <span class="M">✓</span> 직접 체크 · <span class="N">○</span> 결석 · <span class="na">·</span> 등록 전</p>
+    <p class="legend"><span class="F">●</span> 얼굴로 확인 · <span class="M">✓</span> 직접 체크 · <span class="P">?</span> 확인 중 · <span class="N">○</span> 결석 · <span class="na">·</span> 등록 전</p>
   </section>
 </main>
 <script>
 (() => {
   const TAG_PREFIX = "공릉로출석:";  // publish.py와 같아야 함
-  const MARK = { F: "●", M: "✓", N: "○", ".": "·" };
+  const MARK = { F: "●", M: "✓", P: "?", N: "○", ".": "·" };
   const DAYS = "일월화수목금토";
   const STREAK_ALERT = 3;
   const COLUMNS = 8;
@@ -191,13 +192,16 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
     }
     const index = view.services.findIndex((s) => String(s.id) === $("svc").value);
     const sid = view.services[index].id;
-    const present = [], absent = [];
+    const present = [], pending = [], absent = [];
     for (const m of view.members) {
       const c = m.cells[index];
       if (c === "F" || c === "M") present.push(m);
+      else if (c === "P") pending.push(m);
       else if (c === "N") absent.push(m);
     }
-    $("svc-count").textContent = `출석 ${present.length}명 / ${present.length + absent.length}명`;
+    $("svc-count").textContent = `출석 ${present.length}명` + (pending.length ? ` · 확인 중 ${pending.length}명` : "");
+    $("pending").replaceChildren(...pending.map((m) => el("li", m.name)));
+    $("pending").previousElementSibling.hidden = $("pending").hidden = !pending.length;
     $("present").replaceChildren(...present.map((m) => {
       const li = el("li", m.name);
       const when = view.arrived[`${sid}:${m.id}`];
